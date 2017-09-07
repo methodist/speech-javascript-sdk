@@ -12,8 +12,7 @@
 <div class="container">
 <section>
 	<h2>マイク入力・インターフェース</h2>
-	<p>入力モデルを選んでください: <select id="model"></select></p>
-	<p>出力モデルを選んでください: <select id="voice"></select></p>
+	<p>モデルを選んでください: <select id="model"></select></p>
 	<button id="button" style="font-weight:bold;">マイク開始</button>
 	<button id="stop" style="font-weight:bold;">マイク停止</button>
 	<p><form name="form_name">話し相手: <input id="target" name="target" value="花子" type="text" style="width:100px;"></form></p>
@@ -22,12 +21,11 @@
 <h2>Node-REDステータス</h2>
 <div id="node-red"></div>
 
-<h2>Conversation送受信テキスト</h2>
+<h2>Conversation送信テキスト</h2>
 <div data-name="chat"></div>
 
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <script src="./bower_components/watson-speech/dist/watson-speech.js"></script>
-
 
 <script type="text/javascript">
 
@@ -49,9 +47,7 @@ function open() {
         // イベントハンドラの設定
         webSocket.onopen = onOpen;
         webSocket.onclose = onClose;
-        webSocket.onmessage = onMessage;
         webSocket.onerror = onError;
-
     }
 }
 
@@ -71,27 +67,6 @@ function onClose(event) {
    //chat("Node-RED:"+"切断しました。3秒後に再接続します。(" + event.code + ")");
    webSocket = null;
    setTimeout("open()", 3000);
-}
-
-// メッセージ受信イベント
-function onMessage(event) {
-	if (event && event.data) {
-		chat("--> " + event.data);
-	}
-
-	// synthesize and play the text using the chosen voice
-	getTtsToken().then(function (token) {
-	
-	  WatsonSpeech.TextToSpeech.synthesize({
-	    text: event.data,
-	    voice: document.querySelector('#voice').value,
-	    token: token
-	  }).on('error', function(err) {
-	    console.log('audio error: ', err);
-	  });
-	
-	});
-
 }
 
 // message log
@@ -138,32 +113,6 @@ getSttToken()
 
   }).catch(console.error.bind(console));
 
-function getTtsToken() {
-  return fetch('/api/text-to-speech/token')
-    .then(function(response) {
-      return response.text();
-    });
-}
-
-// fetch the voices and populate the dropdown
-getTtsToken()
-  .then(function (token) {
-    return WatsonSpeech.TextToSpeech.getVoices({token: token});
-  }).then(function (voices) {
-
-    var dropdown = document.querySelector('#voice');
-    voices.forEach(function (v) {
-      var o = document.createElement('option');
-      o.value = v.name;
-      o.textContent = v.name;
-      if (v.name == 'ja-JP_EmiVoice') {
-        o.selected = true;
-      }
-      dropdown.appendChild(o);
-    });
-
-  }).catch(console.error.bind(console));
-
 // recognize the text using the chosen model
 document.querySelector('#button').onclick = function () {
   $("#button").prop("disabled", true);
@@ -196,7 +145,7 @@ document.querySelector('#button').onclick = function () {
 			var mydata = data.replace(regex, "$1");
 			if ((mylength = mydata.length) > 3) {
       		webSocket.send(mydata);
-				chat("YOU " + mydata);
+				chat(mydata);
 				console.log("SENDING ... -> ", mydata);
 
 			}
