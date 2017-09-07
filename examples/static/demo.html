@@ -148,14 +148,6 @@ document.querySelector('#button').onclick = function () {
 				chat(mydata);
 				console.log("SENDING ... -> ", mydata);
 
-		   	kuromoji.builder({ dicPath: "./bower_components/kuromoji/dict"}).build(function (err, tokenizer) {
-		   	  var tokens = tokenizer.tokenize(mydata);
-		   	  tokens.forEach(function (value, index) {
-		   	  	if (value["pos_detail_1"] === "固有名詞") {
-		   	  	console.log("固有名詞検出: ", value["basic_form"]);
-		   	  	}
-		   	  });
-		   	});
 			}
 		}
 
