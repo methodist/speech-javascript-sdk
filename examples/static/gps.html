@@ -19,11 +19,9 @@
 	<p><form name="form_name">話し相手: <input id="target" name="target" value="花子" type="text" style="width:100px;"></form></p>
 </section>
 
-<h2>Node-REDステータス</h2>
+<h2>ステータス</h2>
 <div id="node-red"></div>
-
-<h2>位置情報</h2>
-<ul id="location"></ul>
+<div id="location"></div>
 
 <h2>Watson API 送受信テキスト</h2>
 <div data-name="chat"></div>
@@ -59,17 +57,17 @@ function open() {
 
 // 接続イベント
 function onOpen(event) {
-	document.getElementById("node-red").innerHTML="STATUS: 接続しました";
+	document.getElementById("node-red").innerHTML="Node-RED: 接続しました";
 }
 
 // エラーイベント
 function onError(event) {
-	document.getElementById("node-red").innerHTML="STATUS: エラーが発生しました";
+	document.getElementById("node-red").innerHTML="Node-RED: エラーが発生しました";
 }
 
 // 切断イベント
 function onClose(event) {
-	document.getElementById("node-red").innerHTML="STATUS: <font color=\"red\">切断しました</font> .. 3秒後に再接続します(" + event.code + ")"; 
+	document.getElementById("node-red").innerHTML="Node-RED: <font color=\"red\">切断しました</font> .. 3秒後に再接続します(" + event.code + ")"; 
    //chat("Node-RED:"+"切断しました。3秒後に再接続します。(" + event.code + ")");
    webSocket = null;
    setTimeout("open()", 3000);
@@ -118,10 +116,10 @@ if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
     // 位置情報取得成功時
     function (pos) { 
-            var location ="<li>"+"緯度：" + pos.coords.latitude + "</li>";
-            location += "<li>"+"経度：" + pos.coords.longitude + "</li>";
+            var location1 = "緯度:" + pos.coords.latitude ;
+            var location2 = "経度:" + pos.coords.longitude;
+            document.getElementById("location").innerHTML = location1 + " - " + location2;
 				mygps = "GPS:"+pos.coords.latitude+","+pos.coords.longitude;
-            document.getElementById("location").innerHTML = location;
     },
     // 位置情報取得失敗時
     function (pos) { 
