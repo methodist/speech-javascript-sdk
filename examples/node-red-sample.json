@@ -1,0 +1,1 @@
+[{"id":"53d9e4bd.3f542c","type":"function","z":"4ddd3508.11e5fc","name":"output連結","func":"var text;\nmsg.payload.output.text.forEach(function(value, index) {\n    ( index === 0) ? text = value : text += \"。\"+value;\n});\nmsg.payload = text;\nreturn msg;","outputs":1,"noerr":0,"x":458,"y":120,"wires":[["32797c11.19871c","27520d99.81c49a"]]}]
