@@ -1,19 +1,9 @@
 ---
-declared-services:
-  speech_to_text_sdk:
-    label: speech_to_text
-    plan: standard
-  text_to_speech_sdk:
-    label: text_to_speech
-    plan: standard
 applications:
-- name: watson-speech
+- name: watson-speech-123
   buildpack: sdk-for-nodejs
   path: .
   command: npm start
-  memory: 512M
-  services:
-  - speech_to_text_sdk
-  - text_to_speech_sdk
+  memory: 256M
   env:
    NODE_ENV: production
