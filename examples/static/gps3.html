@@ -34,11 +34,10 @@
 
 
 // 接続先URI
-var uri = "wss://stt-tts-conversation.au-syd.mybluemix.net/ws/stt";
+//var uri = "wss://stt-tts-conversation.au-syd.mybluemix.net/ws/stt";
+var uri = "wss://node-red-demo-4-stt-tts-wcs.au-syd.mybluemix.net/ws/stt";
 
 var webSocket = null;
-
-var micon = false;
 
 // 初期処理
 function init() {
@@ -86,22 +85,19 @@ function onMessage(event) {
 			chat("--> " + event.data);
 		}
 
-		if (micon === "true") {
-			// synthesize and play the text using the chosen voice
-			getTtsToken().then(function (token) {
-			
-			  WatsonSpeech.TextToSpeech.synthesize({
-			    text: event.data,
-			    voice: document.querySelector('#voice').value,
-			    token: token
-			  }).on('error', function(err) {
-			    console.log('audio error: ', err);
-			  });
-			
-			});
-		}
+		// synthesize and play the text using the chosen voice
+		getTtsToken().then(function (token) {
+		
+		  WatsonSpeech.TextToSpeech.synthesize({
+		    text: event.data,
+		    voice: document.querySelector('#voice').value,
+		    token: token
+		  }).on('error', function(err) {
+		    console.log('audio error: ', err);
+		  });
+		
+		});
 	}
-
 }
 
 // message log
@@ -214,7 +210,6 @@ getTtsToken()
 
 // recognize the text using the chosen model
 document.querySelector('#button').onclick = function () {
-  micon = true;
   $("#button").prop("disabled", true);
   $("#stop").prop("disabled", false);
   targetName = document.getElementById("target").value; // get target name
@@ -255,7 +250,6 @@ document.querySelector('#button').onclick = function () {
 
     //document.querySelector('#stop').onclick = stream.stop.bind(stream);
 	 document.querySelector('#stop').onclick = function() {
-		 micon = false;
 	    micStop();
 	 };
 
