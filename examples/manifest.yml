@@ -1,9 +1,10 @@
 ---
 applications:
-- name: watson-speech-123
+- name: speech-conversation
   buildpack: sdk-for-nodejs
   path: .
   command: npm start
   memory: 256M
-  env:
-   NODE_ENV: production
+env:
+  NODE_ENV: production
+
