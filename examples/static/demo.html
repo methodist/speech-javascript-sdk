@@ -10,19 +10,19 @@
 </head>
 <body>
 <div class="container">
-<section>
 	<h2>マイク入力・インターフェース</h2>
-	<p>入力モデルを選んでください: <select id="model"></select></p>
-	<p>出力モデルを選んでください: <select id="voice"></select></p>
+	入力モデルを選んでください: <select id="model"></select><br>
+	出力モデルを選んでください: <select id="voice"></select><br>
+	<form name="form_name">話し相手: <input id="target" name="target" value="花子" type="text" style="width:100px;"></form>
 	<button id="button" style="font-weight:bold;">マイク開始</button>
 	<button id="stop" style="font-weight:bold;">マイク停止</button>
-	<p><form name="form_name">話し相手: <input id="target" name="target" value="花子" type="text" style="width:100px;"></form></p>
-</section>
 
-<h2>Node-REDステータス</h2>
+<h2>ステータス</h2>
 <div id="node-red"></div>
 
 <h2>Watson API 送受信テキスト</h2>
+<input type="text" data-name="message" size="50" />
+<hr />
 <div data-name="chat"></div>
 
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
@@ -33,13 +33,14 @@
 
 
 // 接続先URI
-var uri = "wss://stt-tts-conversation.au-syd.mybluemix.net/ws/stt";
+var uri = "wss://node-red-demo-4-stt-tts-wcs.au-syd.mybluemix.net/ws/stt";
 
 var webSocket = null;
 
 // 初期処理
 function init() {
-    open();
+	$("[data-name='message']").keypress(press);
+   open();
 }
 
 function open() {
@@ -51,23 +52,22 @@ function open() {
         webSocket.onclose = onClose;
         webSocket.onmessage = onMessage;
         webSocket.onerror = onError;
-
     }
 }
 
 // 接続イベント
 function onOpen(event) {
-	document.getElementById("node-red").innerHTML="STATUS: 接続しました";
+	document.getElementById("node-red").innerHTML="Node-RED: 接続しました";
 }
 
 // エラーイベント
 function onError(event) {
-	document.getElementById("node-red").innerHTML="STATUS: エラーが発生しました";
+	document.getElementById("node-red").innerHTML="Node-RED: エラーが発生しました";
 }
 
 // 切断イベント
 function onClose(event) {
-	document.getElementById("node-red").innerHTML="STATUS: <font color=\"red\">切断しました</font> .. 3秒後に再接続します(" + event.code + ")"; 
+	document.getElementById("node-red").innerHTML="Node-RED: <font color=\"red\">切断しました</font> .. 3秒後に再接続します(" + event.code + ")"; 
    //chat("Node-RED:"+"切断しました。3秒後に再接続します。(" + event.code + ")");
    webSocket = null;
    setTimeout("open()", 3000);
@@ -91,19 +91,37 @@ function onMessage(event) {
 	  });
 	
 	});
-
 }
 
 // message log
 function chat(message) {
-    // 10件まで残す
+    // 12件まで残す
     var chats = $("[data-name='chat']").find("div");
-    while (chats.length > 10) {
+    while (chats.length > 11) {
         chats = chats.last().remove();
     }
     // メッセージ表示
     var msgtag = $("<div>").text(message);
     $("[data-name='chat']").prepend(msgtag);
+}
+
+// キー押下時
+function press(event) {
+    // キーがEnterか判定
+    if (event && event.which == 13) {
+        // メッセージ取得
+        var message = $("[data-name='message']").val();
+        // 存在チェック
+        if (message && webSocket) {
+            // メッセージ送信
+            webSocket.send("" + message);
+            // メッセージ初期化
+            $("[data-name='message']").val("");
+				console.log("DETECT(i): ", message);
+				console.log("SENDING ... -> ", message);
+				chat("YOU " + message);
+        }
+    }
 }
 
 // 初期処理登録
@@ -166,6 +184,7 @@ getTtsToken()
 
 // recognize the text using the chosen model
 document.querySelector('#button').onclick = function () {
+  console.log("MIC Started...");
   $("#button").prop("disabled", true);
   $("#stop").prop("disabled", false);
   targetName = document.getElementById("target").value; // get target name
@@ -187,7 +206,7 @@ document.querySelector('#button').onclick = function () {
 
     stream.on('data', function(data) {
 
-		console.log("DETECT: ", data);
+		console.log("DETECT(m): ", data);
 
 		var regex = new RegExp(".*(" + targetName + ")(さん)(.*)","i");
 		data = data.replace(regex,"$1$3");
