@@ -33,7 +33,8 @@
 <script type="text/javascript">
 
 // 接続先URI
-var url = "http://node-red-demo-4-stt-tts-wcs.au-syd.mybluemix.net/conv";
+//var url = "http://node-red-demo-4-stt-tts-wcs.au-syd.mybluemix.net/conv";
+var url = "http://localhost:1880/convSTT";
 
 var targetName = document.getElementById("target").value;
 
@@ -94,9 +95,14 @@ function getRespond(message, targetName, mode) {
 		}
 
 	   context = data.context;
-	   data = data.output;
+	   //data = data.output;
+	   data = data.output.text[0];
 	   var watson = "<span style=\"color:red;\">" + targetName + "</span>"; 
 	   chat(watson + " " + data);
+
+		//dataが<html>タグを含む場合は、『こちらを参照してください』と言う
+		var htmlRe = /^<html>.*/i;
+		if (htmlRe.test(data)) data = "こちらを参照してください";
 
 	   getTtsToken().then(function (token) {
 	     WatsonSpeech.TextToSpeech.synthesize({
