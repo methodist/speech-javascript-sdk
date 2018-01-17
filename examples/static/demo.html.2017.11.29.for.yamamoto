@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Watson STT client</title>
+  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <script type="text/javascript">
+  </script>
+</head>
+<body>
+<div class="container">
+	<h2>マイク入力・インターフェース</h2>
+	入力モデルを選んでください: <select id="model"></select><br>
+	出力モデルを選んでください: <select id="voice"></select><br>
+	<form name="form_name">話し相手: <input id="target" name="target" value="花子" type="text" style="width:100px;"></form>
+	<button id="button" style="font-weight:bold;">マイク開始</button>
+	<button id="stop" style="font-weight:bold;">マイク停止</button><br><br>
+	デバッグ: <select id="debug">
+		<option value="1" selected>OFF</option>
+		<option value="2">ON</option>
+	</select><br>
+
+<h2>Watson API 送受信テキスト</h2>
+<input type="text" data-name="message" size="50" />
+<hr />
+<div data-name="chat" id="chat"></div>
+
+<script src="./bower_components/watson-speech/dist/watson-speech.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+<script type="text/javascript">
+
+// 接続先URI
+var url = "http://node-red-demo-4-stt-tts-wcs.au-syd.mybluemix.net/conv";
+
+var targetName = document.getElementById("target").value; // get target name
+
+var postData = { 
+	input: '',
+	context: '',
+	alternate_intents: '',
+};
+
+var context = { timezone: "Asia/Tokyo" };
+
+// 初期処理
+function init() {
+	$("[data-name='message']").keypress(press);
+}
+
+// メッセージ受信イベント
+function onMessage(event) {
+	if (event && event.data) {
+		chat("--> " + event.data);
+	}
+
+	// synthesize and play the text using the chosen voice
+	getTtsToken().then(function (token) {
+	
+	  WatsonSpeech.TextToSpeech.synthesize({
+	    text: event.data,
+	    voice: document.querySelector('#voice').value,
+	    token: token
+	  }).on('error', function(err) {
+	    console.log('audio error: ', err);
+	  });
+	
+	});
+}
+
+// message log
+function chat(message) {
+    // 12件まで残す
+    //var chats = $("[data-name='chat']").find("div");
+    //while (chats.length > 11) {
+    //   chats = chats.last().remove();
+    //}
+    //var msgtag = $("<div>").text(message);
+    //$("[data-name='chat']").prepend(msgtag);
+	 if (document.getElementById("chat"))
+		 document.getElementById("chat").innerHTML = "<div>" + message + "</div>" + document.getElementById("chat").innerHTML;
+	 else
+		 document.getElementById("chat").innerHTML = "<div>" + message + "</div>"; 
+}
+
+// キー押下時
+function press(event) {
+    // キーがEnterか判定
+    if (event && event.which == 13) {
+        // メッセージ取得
+        var message = $("[data-name='message']").val();
+
+        if (message) {
+
+			   postData.input = message;
+			   postData.alternate_intents = true;
+
+				if (context) postData.context = context;
+				console.log("=== PRE postData ===");
+				//console.log(JSON.stringify(context, undefined, 3));
+				console.log(JSON.stringify(postData, undefined, 3));
+				console.log("===================");
+
+				$.post({ 
+					url: url, 
+					data: postData,
+			  	}).done(function (data) {
+					console.log("==== RETURN ====");
+					console.log(JSON.stringify(data, undefined, 3));
+					context = data.context;
+					data = data.output;
+					var watson = "<span style=\"color:red;\">" + targetName + "</span>"; 
+					chat(watson + " " + data);
+					// synthesize and play the text using the chosen voice
+					getTtsToken().then(function (token) {
+					  WatsonSpeech.TextToSpeech.synthesize({
+					    text: data,
+					    voice: document.querySelector('#voice').value,
+					    token: token
+					  }).on('error', function(err) {
+					    console.log('audio error: ', err);
+					  });
+					});
+				}).fail(function() {
+						console.log("ERROR: oh my god");
+				});
+
+				// メッセージ消去
+				$("[data-name='message']").val("");
+
+				console.log("DETECT(i): ", message);
+				console.log("SENDING ... -> ", message);
+				chat("YOU " + message);
+        }
+    }
+}
+
+// 初期処理登録
+$(init);
+
+$("#button").prop("disabled", false);
+$("#stop").prop("disabled", true);
+
+function getSttToken() {
+  return fetch('/api/speech-to-text/token')
+    .then(function(response) {
+      return response.text();
+    });
+}
+
+function getTtsToken() {
+  return fetch('/api/text-to-speech/token')
+    .then(function(response) {
+      return response.text();
+    });
+}
+
+// fetch the models and populate the dropdown
+getSttToken()
+  .then(function (token) {
+    return WatsonSpeech.SpeechToText.getModels({token: token});
+  }).then(function (models) {
+
+    var dropdown = document.querySelector('#model');
+    models.forEach(function (m) {
+      var o = document.createElement('option');
+      o.value = m.name;
+      o.textContent = m.name;
+      if (m.name == 'ja-JP_BroadbandModel') {
+        o.selected = true;
+      }
+      dropdown.appendChild(o);
+    });
+
+  }).catch(console.error.bind(console));
+
+// fetch the voices and populate the dropdown
+getTtsToken()
+  .then(function (token) {
+    return WatsonSpeech.TextToSpeech.getVoices({token: token});
+  }).then(function (voices) {
+
+    var dropdown = document.querySelector('#voice');
+    voices.forEach(function (v) {
+      var o = document.createElement('option');
+      o.value = v.name;
+      o.textContent = v.name;
+      if (v.name == 'ja-JP_EmiVoice') {
+        o.selected = true;
+      }
+      dropdown.appendChild(o);
+    });
+
+  }).catch(console.error.bind(console));
+
+// recognize the text using the chosen model
+document.querySelector('#button').onclick = function () {
+  console.log("MIC Started...");
+  $("#button").prop("disabled", true);
+  $("#stop").prop("disabled", false);
+  getSttToken().then(function (token) {
+
+	 var stream = WatsonSpeech.SpeechToText.recognizeMicrophone({
+		token: token,
+      model: document.querySelector('#model').value,
+		inactivity_timeout: 300, // timeout value between Watson Speech-to-Text and this javascript
+	   object_mode: false
+	
+    });
+
+    stream.on('error', function(err) {
+        console.log(err);
+    });
+
+    stream.setEncoding('utf8');
+
+    stream.on('data', function(data) {
+	 	console.log("DETECT(m): ", data);
+	   var regex = new RegExp(".*(" + targetName + ")(さん)(.*)","i");
+		data = data.replace(regex,"$1$3");
+		regex = new RegExp(".*" + targetName + "(.*)","i");
+		if (regex.test(data)) {
+
+			var mydata = data.replace(regex, "$1");
+
+			if ((mylength = mydata.length) > 3) {
+
+				postData.input = mydata;
+				postData.alternate_intents = true;
+
+				if (context) postData.context = context;
+
+				$.post({
+					url: url,
+					data: postData,
+				}).done(function(data) {
+					context = data.context;
+					data = data.output;
+					var watson = "<span style=\"color:red;\">" + targetName + "</span>";
+					chat(watson + " " + data);
+					// synthesize and play the text using the chosen voice
+					getTtsToken().then(function (token) {
+					  WatsonSpeech.TextToSpeech.synthesize({
+					    text: data,
+					    voice: document.querySelector('#voice').value,
+					    token: token
+					  }).on('error', function(err) {
+					    console.log('audio error: ', err);
+					  });
+					});
+				}).fail(function() {
+					console.log("ERROR: oh my god");
+				});
+
+				console.log("SENDING ... -> ", mydata);
+				chat("YOU " + mydata);
+			}
+		}
+	 });
+
+    //document.querySelector('#stop').onclick = stream.stop.bind(stream);
+	 document.querySelector('#stop').onclick = function() {
+	    micStop();
+	 };
+
+	 function micStop() {
+	 	 stream.stop();
+	 	 console.log("MIC Stopped...");
+       $("#button").prop("disabled", false);
+       $("#stop").prop("disabled", true);
+	 }
+
+  }).catch(function(error) {
+      console.log(error);
+  });
+};
+
+</script>
+
+</div>
+</body>
+</html>
